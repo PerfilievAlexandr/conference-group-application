@@ -12,7 +12,8 @@ class NewPersonForm extends Component {
                 <h1>Add user</h1>
                 <form onSubmit={handleSubmit}>
                     <Field name='name' component={ErrorField} />
-                    <Field name='phone' component={ErrorField}  />
+                    <Field name='lastName' component={ErrorField} />
+                    <Field name='email' component={ErrorField}  />
                     <div>
                         <input type='submit' />
                     </div>
@@ -22,16 +23,17 @@ class NewPersonForm extends Component {
     };
 }
 
-const validate = ({name, phone}) => {
+const validate = ({name, lastName, email}) => {
     const errors = {};
 
     if (!name) errors.name = 'email is required';
-    if (!phone) errors.phone = 'password is required';
+    if (!lastName) errors.lastName = 'lastName is required';
+    if (!email) errors.email = 'password is required';
 
     return errors
 };
 
 export default reduxForm({
-    form: 'auth',
+    form: 'addPerson',
     validate
 })(NewPersonForm);

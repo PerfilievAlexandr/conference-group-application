@@ -1,6 +1,6 @@
 import {appName} from '../config';
 import uniqid from 'uniqid';
-import {put, takeEvery} from 'redux-saga/effects'
+import {put, takeEvery, call} from 'redux-saga/effects'
 
 
 ///////////////////constants///////////////////////////
@@ -28,12 +28,7 @@ export default function reducer(state = initialState, action) {
 
     switch (type) {
         case ADD_PERSON:
-            return {
-                ...state,
-                people: {...state.people,
-                    [payload.id]: payload
-                }
-            };
+            return {...state.people, [payload.id]: payload};
         default:
             return state;
     }
@@ -41,11 +36,12 @@ export default function reducer(state = initialState, action) {
 
 //////////////////////sagas/////////////////////////////
 
-const addPersonSaga = function * (action) {
-    const id = uniqid();
+export const addPersonSaga = function * (action) {
+    const id = yield call(uniqid);
+
     yield put({
         type: ADD_PERSON,
-        payload: {...action, id}
+        payload: {...action.payload, id}
     });
 };
 
