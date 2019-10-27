@@ -1,65 +1,67 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import {moduleName, eventListSelector} from '../../ducks/events';
-import {loadEvents, selectEvent} from '../../ducks/events';
+import {loadLazy, selectEvent} from '../../ducks/events';
 import Loader from "../Loader";
-import {Table, Column} from 'react-virtualized';
+import {Table, Column, InfiniteLoader} from 'react-virtualized';
 import 'react-virtualized/styles.css';
+import conferences from '../../mock/conferences';
 
 export class EventsList extends Component {
 
     componentDidMount() {
-        this.props.loadEvents();
+        this.props.loadLazy();
     };
 
-    handleEventClick = (id) => {
-        this.props.selectEvent(id)
-    };
-
-    getRows = () => {
-        const {events, loaded} = this.props;
-
-        return loaded && events.map(row => {
-            return (
-                <tr key={row.id} onClick={() => this.handleEventClick(row.id)}>
-                    <td>{row.title}</td>
-                    <td>{row.where}</td>
-                    <td>{row.month}</td>
-                </tr>
-            )
-        })
-    };
+    handleRowClick = ({rowData}) => this.props.selectEvent(rowData.id);
 
     rowGetter = ({index}) => this.props.events[index];
 
+    isRowLoaded = ({index}) => !!this.props.events[index];
+
+    loadMoreRows = () => {
+        this.props.loadLazy()
+    };
+
     render() {
-        const {events, loaded} = this.props;
+        const {events, loading, loaded} = this.props;
         if (!loaded) return <Loader/>;
         return (
-                <Table
-                    headerHeight={50}
-                    height={400}
-                    rowCount={events.length}
-                    rowGetter={this.rowGetter}
-                    rowHeight={30}
-                    width={700}
-                >
-                    <Column
-                        dataKey='title'
-                        label='title'
-                        width={300}
-                    />
-                    <Column
-                        dataKey='where'
-                        label='where'
-                        width={250}
-                    />
-                    <Column
-                        dataKey='when'
-                        label='when'
-                        width={150}
-                    />
-                </Table>
+            <InfiniteLoader
+                isRowLoaded={this.isRowLoaded}
+                loadMoreRows={this.loadMoreRows}
+                rowCount={conferences.length}
+            >
+                {({onRowsRendered, registerChild}) => (
+                    <Table
+                        headerHeight={50}
+                        height={400}
+                        rowCount={events.length}
+                        rowGetter={this.rowGetter}
+                        rowHeight={30}
+                        width={700}
+                        onRowClick={this.handleRowClick}
+                        onRowsRendered={onRowsRendered}
+                        ref={registerChild}
+                    >
+                        <Column
+                            dataKey='title'
+                            label='title'
+                            width={300}
+                        />
+                        <Column
+                            dataKey='where'
+                            label='where'
+                            width={250}
+                        />
+                        <Column
+                            dataKey='when'
+                            label='when'
+                            width={150}
+                        />
+                    </Table>
+                )}
+            </InfiniteLoader>
         );
     };
 }
@@ -67,4 +69,5 @@ export class EventsList extends Component {
 export default connect((state) => ({
     events: eventListSelector(state),
     loaded: state[moduleName].loaded,
-}), {loadEvents, selectEvent})(EventsList);
+    loading: state[moduleName].loading,
+}), {loadLazy, selectEvent})(EventsList);

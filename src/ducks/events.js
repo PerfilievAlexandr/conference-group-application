@@ -1,6 +1,6 @@
 import {appName} from '../config';
 import firebase from 'firebase';
-import {take, call, put, all} from 'redux-saga/effects';
+import {take, call, put, all, select} from 'redux-saga/effects';
 import {idInObjectValue, addUniqItemToArray} from './utils';
 import {createSelector} from 'reselect';
 
@@ -16,6 +16,9 @@ export const moduleName = 'events';
 
 export const FETCH_ALL_REQUEST = `${appName}/${moduleName}/FETCH_ALL_REQUEST`;
 export const FETCH_ALL_SUCCESS = `${appName}/${moduleName}/FETCH_ALL_SUCCESS`;
+export const FETCH_LAZY_REQUEST = `${appName}/${moduleName}/FETCH_LAZY_REQUEST`;
+export const FETCH_LAZY_START = `${appName}/${moduleName}/FETCH_LAZY_START`;
+export const FETCH_LAZY_SUCCESS = `${appName}/${moduleName}/FETCH_LAZY_SUCCESS`;
 export const SELECT_EVENT = `${appName}/${moduleName}/SELECT_EVENT`;
 
 /////////////////////REDUCER//////////////////////////////////
@@ -26,6 +29,7 @@ export default function reducer(state = initialState, action) {
     switch (type) {
 
         case FETCH_ALL_REQUEST:
+        case FETCH_LAZY_START:
             return {
                 ...state,
                 loading: true,
@@ -39,11 +43,23 @@ export default function reducer(state = initialState, action) {
                 loaded: true,
                 entities: idInObjectValue(payload),
             };
+
+        case FETCH_LAZY_SUCCESS:
+
+            return {
+                ...state,
+                loading: false,
+                //loaded: Object.keys(payload) < 10,
+                loaded: true,
+                entities: {...state.entities, ...idInObjectValue(payload)}
+            };
+
         case SELECT_EVENT:
             return {
                 ...state,
                 selected: addUniqItemToArray(state.selected, payload)
             };
+
         default:
             return state
     }
@@ -72,6 +88,12 @@ export function selectEvent(id) {
         payload: id
     }
 }
+
+export function loadLazy() {
+    return {
+        type: FETCH_LAZY_REQUEST,
+    }
+}
 /////////////////////SAGAS//////////////////////////////////
 
 export function * loadEventsSaga() {
@@ -91,8 +113,36 @@ export function * loadEventsSaga() {
     }
 }
 
+export function * fetchLazySaga () {
+    while (true) {
+        yield take(FETCH_LAZY_REQUEST);
+
+        const store = yield select(stateSelector);
+
+        yield put({
+            type: FETCH_LAZY_START
+        });
+
+        if (store.loading) continue;
+        
+        const lastEvent = store.entities && Object.values(store.entities);
+        const ref = firebase.database().ref('events')
+            .orderByKey()
+            .limitToFirst(10)
+            .startAt(lastEvent ? lastEvent[lastEvent.length - 1].id : '');
+
+        const data = yield call([ref, ref.once], 'value');
+
+        yield put({
+            type: FETCH_LAZY_SUCCESS,
+            payload: data.val()
+        });
+    }
+}
+
 export function * saga () {
     yield all([
-        loadEventsSaga()
+        loadEventsSaga(),
+        fetchLazySaga()
     ]);
 }
