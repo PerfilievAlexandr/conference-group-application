@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {Route} from 'react-router-dom';
 import AdminPage from './routes/AdminPage';
 import AuthPage from './routes/AuthPage';
-import AddPeoplePage from './routes/AddPeoplePage';
+import PeoplePage from './routes/PeoplePage';
 import EventsPage from './routes/EventsPage';
 import {connect} from 'react-redux';
 import {moduleName, signOut} from '../ducks/auth';
@@ -25,7 +25,7 @@ class Root extends Component {
                 {btn}
                 <Route path='/admin' component={AdminPage} />
                 <Route path='/auth' component={AuthPage} />
-                <Route path='/addPerson' component={AddPeoplePage} />
+                <Route path='/addPerson' component={PeoplePage} />
                 <Route path='/events' component={EventsPage} />
             </div>
         );

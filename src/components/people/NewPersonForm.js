@@ -4,7 +4,6 @@ import ErrorField from '../auth/ErrorField';
 
 class NewPersonForm extends Component {
     render() {
-
         const {handleSubmit} = this.props;
 
         return (
