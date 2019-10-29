@@ -69,8 +69,12 @@ export default function reducer(state = initialState, action) {
 
 export const stateSelector = (state) => state[moduleName];
 export const entitiesSelector = createSelector(stateSelector, state => state.entities);
+export const selectedSelector = createSelector(stateSelector, state => state.selected);
 export const eventListSelector = createSelector(entitiesSelector, state => {
     return state && Object.values(state)
+});
+export const selectedEventsSelector = createSelector(entitiesSelector, selectedSelector, (events, selections) => {
+    return selections.map(id => events[id])
 });
 
 

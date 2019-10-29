@@ -21,7 +21,7 @@ class PeopleList extends Component {
 
         return (
             <List
-                height={500}
+                height={300}
                 width={500}
                 rowCount={people.length}
                 rowRenderer={this.rowRender}
