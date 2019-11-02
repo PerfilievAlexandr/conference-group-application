@@ -7,6 +7,7 @@ import EventsPage from './routes/EventsPage';
 import {connect} from 'react-redux';
 import {moduleName, signOut} from '../ducks/auth';
 import {NavLink} from 'react-router-dom'
+import CustomDragLayer from './people/CustomDragLayer';
 
 class Root extends Component {
     handleSignOut = () => {
@@ -27,6 +28,7 @@ class Root extends Component {
                 <Route path='/auth' component={AuthPage} />
                 <Route path='/addPerson' component={PeoplePage} />
                 <Route path='/events' component={EventsPage} />
+                <CustomDragLayer />
             </div>
         );
     };

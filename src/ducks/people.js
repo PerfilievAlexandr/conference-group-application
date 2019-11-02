@@ -102,8 +102,10 @@ export default function reducer(state = initialState, action) {
 export const stateSelector = (state) => state[moduleName];
 export const peopleLoading = (state) => state[moduleName].loading;
 export const peopleLoaded = (state) => state[moduleName].loaded;
+export const idSelector = (_, props) => props.id;
 export const peopleSelector = createSelector(stateSelector, state => state.entities);
 export const peopleSelectorArr = createSelector(peopleSelector, entities => Object.values(entities));
+export const peopleIdSelector = createSelector(peopleSelector, idSelector, (entities, id) => entities[id]);
 
 //////////////////////sagas/////////////////////////////
 

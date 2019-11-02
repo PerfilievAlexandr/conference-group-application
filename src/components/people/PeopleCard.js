@@ -2,9 +2,14 @@ import React, {Component} from 'react';
 import { DragSource } from 'react-dnd';
 import { connect } from 'react-redux';
 import { addEventToPerson } from '../../ducks/people';
+import {getEmptyImage} from 'react-dnd-html5-backend'
 
 
 class PeopleCard extends Component {
+
+    componentDidMount() {
+        this.props.connectPreview(getEmptyImage());
+    }
 
     render() {
         const {person, style, isDragging, connectDragSource } = this.props;
@@ -27,15 +32,16 @@ const spec = {
     },
 
     endDrag(props, monitor) {
-        const eventId = monitor.getDropResult().id;
+        const eventId = monitor.getDropResult() && monitor.getDropResult().id;
         const personId = props.person.id;
 
-        props.addEventToPerson(eventId, personId)
+        eventId && props.addEventToPerson(eventId, personId)
     }
 };
 
 const collect = (connect, monitor) => ({
     connectDragSource: connect.dragSource(),
+    connectPreview: connect.dragPreview(),
     isDragging: monitor.isDragging()
 });
 
