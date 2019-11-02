@@ -3,6 +3,7 @@ import firebase from 'firebase';
 import {take, call, put, all, select} from 'redux-saga/effects';
 import {idInObjectValue, addUniqItemToArray} from './utils';
 import {createSelector} from 'reselect';
+import {peopleSelectorArr} from './people';
 
 /////////////////////CONSTANTS//////////////////////////////////
 
@@ -11,6 +12,7 @@ const initialState = {
     loading: false,
     loaded: false,
     selected: [],
+
 };
 export const moduleName = 'events';
 
@@ -76,6 +78,10 @@ export const eventListSelector = createSelector(entitiesSelector, state => {
 export const selectedEventsSelector = createSelector(entitiesSelector, selectedSelector, (events, selections) => {
     return selections.map(id => events[id])
 });
+
+export const personsGoingToEvent = (state, props) => {
+    return peopleSelectorArr(state).filter(person => person.events && person.events.includes(props));
+};
 
 
 /////////////////////ACTIONS//////////////////////////////////

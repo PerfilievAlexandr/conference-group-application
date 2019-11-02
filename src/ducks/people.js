@@ -1,5 +1,5 @@
 import {appName} from '../config';
-import {put, takeEvery, call, all} from 'redux-saga/effects';
+import {put, takeEvery, call, all, select} from 'redux-saga/effects';
 import firebase from 'firebase';
 import {createSelector} from 'reselect';
 import {idInObjectValue} from './utils'
@@ -12,12 +12,16 @@ export const ADD_PERSON_REQUEST = `${appName}/${moduleName}/ADD_PERSON_REQUEST`;
 export const FETCH__ALL_PERSONS_REQUEST = `${appName}/${moduleName}/FETCH__ALL_PERSONS_REQUEST`;
 export const ADD_PERSON = `${appName}/${moduleName}/ADD_PERSON`;
 export const FETCH__ALL_PERSONS_SUCCESS = `${appName}/${moduleName}/FETCH__ALL_PERSONS_SUCCESS`;
+export const ADD_EVENT_REQUEST = `${appName}/${moduleName}/ADD_EVENT_REQUEST`;
+export const ADD_EVENT_SUCCESS = `${appName}/${moduleName}/ADD_EVENT_SUCCESS`;
 
 const initialState = {
-    people: {},
+    entities: {},
     loading: false,
     loaded: false
 };
+
+
 
 ///////////////////actions/////////////////////////////
 
@@ -31,6 +35,13 @@ export function addPerson(person) {
 export function fetchAllPersons() {
     return {
         type: FETCH__ALL_PERSONS_REQUEST
+    }
+}
+
+export function addEventToPerson(eventId, personId) {
+    return {
+        type: ADD_EVENT_REQUEST,
+        payload: {eventId, personId},
     }
 }
 
@@ -49,9 +60,11 @@ export default function reducer(state = initialState, action) {
             };
 
         case FETCH__ALL_PERSONS_SUCCESS:
+            console.log('test', payload);
+            const people = payload
             return {
                 ...state,
-                people: idInObjectValue(payload),
+                entities: idInObjectValue(payload),
                 loading: false,
                 loaded: true
             };
@@ -59,10 +72,26 @@ export default function reducer(state = initialState, action) {
         case ADD_PERSON:
             return {
                 ...state,
-                people: {...state.people, [payload.id]: payload},
+                entities: {
+                    ...state.entities, [payload.id]: payload
+                },
                 loading: false,
                 loaded: true
             };
+
+        case ADD_EVENT_SUCCESS:
+            const events = state.entities[payload.personId].events ? state.entities[payload.personId].events : [];
+            return {
+                ...state,
+                entities: {
+                    ...state.entities,
+                    [payload.personId]: {
+                        ...state.entities[payload.personId],
+                        events: [...events, payload.eventId]
+                    }
+                }
+            };
+
         default:
             return state;
     }
@@ -73,8 +102,8 @@ export default function reducer(state = initialState, action) {
 export const stateSelector = (state) => state[moduleName];
 export const peopleLoading = (state) => state[moduleName].loading;
 export const peopleLoaded = (state) => state[moduleName].loaded;
-export const peopleSelector = createSelector(stateSelector, state => state.people);
-export const peopleSelectorArr = createSelector(peopleSelector, people => Object.values(people));
+export const peopleSelector = createSelector(stateSelector, state => state.entities);
+export const peopleSelectorArr = createSelector(peopleSelector, entities => Object.values(entities));
 
 //////////////////////sagas/////////////////////////////
 
@@ -108,9 +137,29 @@ export const fetchAllPeopleSaga = function* (action) {
 
 };
 
+export const addEventSaga = function * (action) {
+    const { eventId, personId } = action.payload;
+    const eventsRef = firebase.database().ref(`people/${personId}/events`);
+    const state = yield select(stateSelector);
+    const addEventСondition = !state.entities[personId].events || !state.entities[personId].events.includes(eventId);
+
+    if (addEventСondition) {
+        try {
+            yield call([eventsRef, eventsRef.push], eventId);
+            yield put({
+                type: ADD_EVENT_SUCCESS,
+                payload: {personId, eventId}
+            })
+        } catch (e) {
+            console.error(e)
+        }
+    }
+};
+
 export function* saga() {
     yield all([
         yield takeEvery(ADD_PERSON_REQUEST, addPersonSaga),
-        yield takeEvery(FETCH__ALL_PERSONS_REQUEST, fetchAllPeopleSaga)
+        yield takeEvery(FETCH__ALL_PERSONS_REQUEST, fetchAllPeopleSaga),
+        yield takeEvery(ADD_EVENT_REQUEST, addEventSaga),
     ]);
 }
