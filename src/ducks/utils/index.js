@@ -16,3 +16,8 @@ export const addUniqItemToArray = (arr, item) => {
   arr.splice(itemIndex, 1);
   return [...arr];
 };
+
+export const deleteItem = (obj, item) => {
+  delete obj[item];
+  return {...obj}
+};

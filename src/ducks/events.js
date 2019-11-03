@@ -1,7 +1,7 @@
 import {appName} from '../config';
 import firebase from 'firebase';
-import {take, call, put, all, select} from 'redux-saga/effects';
-import {idInObjectValue, addUniqItemToArray} from './utils';
+import {take, call, put, all, select, takeEvery} from 'redux-saga/effects';
+import {idInObjectValue, addUniqItemToArray, deleteItem} from './utils';
 import {createSelector} from 'reselect';
 import {peopleSelectorArr} from './people';
 
@@ -22,6 +22,8 @@ export const FETCH_LAZY_REQUEST = `${appName}/${moduleName}/FETCH_LAZY_REQUEST`;
 export const FETCH_LAZY_START = `${appName}/${moduleName}/FETCH_LAZY_START`;
 export const FETCH_LAZY_SUCCESS = `${appName}/${moduleName}/FETCH_LAZY_SUCCESS`;
 export const SELECT_EVENT = `${appName}/${moduleName}/SELECT_EVENT`;
+export const REMOVE_EVENT_REQUEST = `${appName}/${moduleName}/REMOVE_EVENT_REQUEST`;
+export const REMOVE_EVENT_SUCCESS = `${appName}/${moduleName}/REMOVE_EVENT_SUCCESS`;
 
 /////////////////////REDUCER//////////////////////////////////
 
@@ -60,6 +62,12 @@ export default function reducer(state = initialState, action) {
             return {
                 ...state,
                 selected: addUniqItemToArray(state.selected, payload)
+            };
+
+        case REMOVE_EVENT_SUCCESS:
+            return {
+                ...state,
+                entities: deleteItem(state.entities, payload)
             };
 
         default:
@@ -102,6 +110,13 @@ export function selectEvent(id) {
 export function loadLazy() {
     return {
         type: FETCH_LAZY_REQUEST,
+    }
+}
+
+export function removeEven(eventId) {
+    return {
+        type: REMOVE_EVENT_REQUEST,
+        payload: eventId
     }
 }
 /////////////////////SAGAS//////////////////////////////////
@@ -150,9 +165,28 @@ export function * fetchLazySaga () {
     }
 }
 
+export function * removeEvenSaga(action) {
+    console.log('removeEvenSaga1', action.payload);
+    const ref = firebase.database().ref('events').child(action.payload);
+    const parentRef = firebase.database().ref('events');
+
+
+
+    try {
+        yield call([ref, ref.remove]);
+        yield put({
+            type: REMOVE_EVENT_SUCCESS,
+            payload: action.payload
+        })
+    }catch (e) {
+        console.log(e);
+    }
+}
+
 export function * saga () {
     yield all([
         loadEventsSaga(),
-        fetchLazySaga()
+        fetchLazySaga(),
+        takeEvery(REMOVE_EVENT_REQUEST, removeEvenSaga)
     ]);
 }

@@ -6,6 +6,7 @@ import Loader from "../Loader";
 import {Table, Column, InfiniteLoader} from 'react-virtualized';
 import 'react-virtualized/styles.css';
 import conferences from '../../mock/conferences';
+import CustomRowRendererComponent from './CustomRowRendererComponent';
 
 export class EventsList extends Component {
 
@@ -15,13 +16,17 @@ export class EventsList extends Component {
 
     handleRowClick = ({rowData}) => this.props.selectEvent(rowData.id);
 
-    rowGetter = ({index}) => this.props.events[index];
+    rowGetter = ({index}) => {
+       return this.props.events[index];
+    };
 
     isRowLoaded = ({index}) => !!this.props.events[index];
 
     loadMoreRows = () => {
         this.props.loadLazy()
     };
+
+    rowRenderer = (props) => <CustomRowRendererComponent {...props}/>;
 
     render() {
         const {events, loading, loaded} = this.props;
@@ -43,6 +48,7 @@ export class EventsList extends Component {
                         onRowClick={this.handleRowClick}
                         onRowsRendered={onRowsRendered}
                         ref={registerChild}
+                        rowRenderer={this.rowRenderer}
                     >
                         <Column
                             dataKey='title'

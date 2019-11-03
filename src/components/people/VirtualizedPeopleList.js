@@ -34,7 +34,7 @@ class VirtualizedPeopleList extends Component {
                     label='lastName'
                 />
                 <Column
-                    width={200}s
+                    width={200}
                     dataKey='email'
                     label='email'
                 />
