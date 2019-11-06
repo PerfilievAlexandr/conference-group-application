@@ -1,5 +1,6 @@
 import {appName} from '../config';
-import {put, takeEvery, call, all, select} from 'redux-saga/effects';
+import {put, takeEvery, call, all, select, fork, spawn, cancel, cancelled, delay, take} from 'redux-saga/effects';
+import { eventChannel } from 'redux-saga'
 import firebase from 'firebase';
 import {createSelector} from 'reselect';
 import {idInObjectValue} from './utils'
@@ -124,7 +125,7 @@ export const addPersonSaga = function* (action) {
     }
 };
 
-export const fetchAllPeopleSaga = function* (action) {
+export const fetchAllPeopleSaga = function* () {
     const peopleRef = firebase.database().ref('people');
 
     try {
@@ -158,7 +159,68 @@ export const addEventSaga = function * (action) {
     }
 };
 
-export function* saga() {
+export const backgroundSyncSaga = function * () {
+    try {
+        while (true) {
+            yield call(fetchAllPeopleSaga);
+            yield delay(2000)
+        }
+    }finally {
+        if (yield cancelled()) {
+            console.log('sync saga cancelled');
+        }
+    }
+};
+
+/*export const cancellableSyncSaga = function  * () {
+    const sync = yield fork(realtimeSync);
+    yield delay(6000);
+    yield cancel(sync);
+};*/
+
+export const cancellableSyncSaga = function * () {
+    let task;
+    while (true) {
+        const { payload } = yield take('@@router/LOCATION_CHANGE');
+
+        if (payload.location.pathname.includes('/addPerson')) {
+            task = yield fork(realtimeSync);
+        } else if(task) {
+            yield cancel(task)
+        }
+    }
+};
+
+const createPeopleSocket = () => eventChannel((emmit) => {
+    const ref = firebase.database().ref('people');
+    const callback = (data) => emmit({ data });
+    ref.on('value', callback);
+
+    return () => {
+        console.log('----- unsubscribe');
+        ref.off('value', callback);
+    }
+});
+
+export const realtimeSync = function * () {
+    const chan = yield call(createPeopleSocket);
+    try {
+        while (true) {
+            const { data } = yield take(chan);
+            yield put({
+                type: FETCH__ALL_PERSONS_SUCCESS,
+                payload: data.val()
+            });
+        }
+    }finally {
+        yield call([chan, chan.close]);
+        console.log('------ unsibscribe sync');
+    }
+
+};
+
+export function * saga() {
+    yield spawn(cancellableSyncSaga);
     yield all([
         yield takeEvery(ADD_PERSON_REQUEST, addPersonSaga),
         yield takeEvery(FETCH__ALL_PERSONS_REQUEST, fetchAllPeopleSaga),

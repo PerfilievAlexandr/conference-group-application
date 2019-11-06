@@ -24,11 +24,16 @@ class Root extends Component {
         return (
             <div>
                 {btn}
+                <ul>
+                    <li><NavLink to='/admin'>admin</NavLink></li>
+                    <li><NavLink to='/addPerson'>add person</NavLink></li>
+                    <li><NavLink to='/events'>events</NavLink></li>
+                </ul>
+                <CustomDragLayer />
                 <Route path='/admin' component={AdminPage} />
                 <Route path='/auth' component={AuthPage} />
                 <Route path='/addPerson' component={PeoplePage} />
                 <Route path='/events' component={EventsPage} />
-                <CustomDragLayer />
             </div>
         );
     };
